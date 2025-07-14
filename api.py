@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import os
 
 # Optional: copy your ollama helper
-from main import get_cached_llama_response
+from train_model import get_cached_llama_response
 
 app = FastAPI()
 
