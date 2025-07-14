@@ -2,10 +2,10 @@
 def generate_summary(players: List[Player]):
     df = pd.DataFrame([p.dict() for p in players])
 
-    # 🔁 Rename for consistency with trained model
+    # Rename for consistency with trained model
     df = df.rename(columns={"DSA_Impact_Factor": "DSA Impact Factor"})
 
-    # ✅ Load the model
+    # Load the model
     try:
         model_bundle = joblib.load("trained_model_GLOBAL.joblib")
         model = model_bundle["model"]
@@ -41,7 +41,11 @@ Their weaker metrics include:
 Write a short NIL scouting summary explaining their strengths and weaknesses in 3–4 sentences.
 """.strip()
 
-            llama_summary = get_cached_llama_response(llama_prompt)
+            try:
+                llama_summary = get_cached_llama_response(llama_prompt)
+            except Exception as e:
+                traceback.print_exc()
+                return {"error": f"LLM call failed: {e}"}
 
             summaries.append({
                 "Name": row.get("Name", "Unnamed Player"),
