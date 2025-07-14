@@ -37,18 +37,18 @@ joblib.dump({
     "model": model,
     "features": features
 }, "trained_model_GLOBAL.joblib")
-print("✅ Model trained and saved as 'trained_model_GLOBAL.joblib'")
+print("Model trained and saved as 'trained_model_GLOBAL.joblib'")
 
 # === Global Feature Importance ===
 coefs = model.named_steps["elasticnetcv"].coef_
 coef_df = pd.Series(coefs, index=features).sort_values(ascending=False)
-print("\n📈 Top Global Positive Contributors:")
+print("\nTop Global Positive Contributors:")
 print(coef_df.head(5))
-print("\n📉 Top Global Negative Contributors:")
+print("\nTop Global Negative Contributors:")
 print(coef_df.tail(5))
 
 # === Individualized Player Scouting Summary ===
-print("\n📋 Individual Player Strengths/Weaknesses:\n")
+print("\nIndividual Player Strengths/Weaknesses:\n")
 for _, row in df.iterrows():
     name = row.get("Player", "Unknown")
     player_vals = pd.Series({f: row[f] for f in features})
@@ -57,11 +57,11 @@ for _, row in df.iterrows():
     top_pos = contribs.sort_values(ascending=False).head(3)
     top_neg = contribs.sort_values().head(3)
 
-    print(f"🔹 {name}:")
-    print("  ✅ Strengths:")
+    print(f" {name}:")
+    print("  Strengths:")
     for k, v in top_pos.items():
         print(f"    + {k}: {v:.3f}")
-    print("  ❌ Weaknesses:")
+    print("  Weaknesses:")
     for k, v in top_neg.items():
         print(f"    - {k}: {v:.3f}")
     print("")
