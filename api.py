@@ -28,15 +28,15 @@ def generate_summary(players: List[Player]):
             llama_prompt = f"""
 You are an NIL analyst.
 
-The player {row.get('Name', 'Unnamed Player')} has standout performance in the following metrics:
-- {top_pos.index[0]}: {row.get(top_pos.index[0], 0.0):.3f}
-- {top_pos.index[1]}: {row.get(top_pos.index[1], 0.0):.3f}
-- {top_pos.index[2]}: {row.get(top_pos.index[2], 0.0):.3f}
+The player {row['Name'] if 'Name' in row else 'Unnamed Player'} has standout performance in the following metrics:
+- {top_pos.index[0]}: {row[top_pos.index[0]]:.3f}
+- {top_pos.index[1]}: {row[top_pos.index[1]]:.3f}
+- {top_pos.index[2]}: {row[top_pos.index[2]]:.3f}
 
 Their weaker metrics include:
-- {top_neg.index[0]}: {row.get(top_neg.index[0], 0.0):.3f}
-- {top_neg.index[1]}: {row.get(top_neg.index[1], 0.0):.3f}
-- {top_neg.index[2]}: {row.get(top_neg.index[2], 0.0):.3f}
+- {top_neg.index[0]}: {row[top_neg.index[0]]:.3f}
+- {top_neg.index[1]}: {row[top_neg.index[1]]:.3f}
+- {top_neg.index[2]}: {row[top_neg.index[2]]:.3f}
 
 Write a short NIL scouting summary explaining their strengths and weaknesses in 3–4 sentences.
 """.strip()
@@ -44,17 +44,20 @@ Write a short NIL scouting summary explaining their strengths and weaknesses in 
             try:
                 llama_summary = get_cached_llama_response(llama_prompt)
             except Exception as e:
+                import traceback
                 traceback.print_exc()
                 return {"error": f"LLM call failed: {e}"}
 
             summaries.append({
-                "Name": row.get("Name", "Unnamed Player"),
+                "Name": row["Name"] if "Name" in row else "Unnamed Player",
                 "Summary": llama_summary
             })
 
         except Exception as e:
             import traceback
+            print("ERROR during row processing:")
+            print(f"Row contents:\n{row.to_dict()}")
             traceback.print_exc()
-            return {"error": f"Failed processing row: {e}"}
+            return {"error": f"{type(e).__name__}: {str(e)}"}
 
     return {"summaries": summaries}
