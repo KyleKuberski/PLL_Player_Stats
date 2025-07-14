@@ -3,7 +3,16 @@ from pydantic import BaseModel
 from typing import List
 import json
 
-app = FastAPI()
+app = FastAPI(
+    title="PLL Player API",
+    description="NIL and stat-based player summary generator",
+    version="1.0.0",
+    docs_url="/docs"
+)
+
+@app.get("/")
+def root():
+    return {"message": "PLL API is running!"}
 
 # Define what a player looks like
 class Player(BaseModel):
