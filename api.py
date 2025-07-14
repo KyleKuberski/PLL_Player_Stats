@@ -1,17 +1,48 @@
+import pandas as pd
+import joblib
+import traceback
+from typing import List
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+from llm_utils import get_cached_llama_response  # Make sure this is in the same folder or on your Python path
+
+app = FastAPI()
+
+# ✅ Define your request schema
+class Player(BaseModel):
+    Name: str
+    goals: float
+    assists: float
+    points: float
+    shotPct: float
+    shotsOnGoalPct: float
+    groundBalls: float
+    causedTurnovers: float
+    faceoffPct: float
+    turnovers: float
+    unassistedGoals: float
+    powerPlayGoals: float
+    shortHandedGoals: float
+    DSA_Impact_Factor: float
+
+@app.get("/")
+def root():
+    return {"message": "PLL API is running!"}
+
 @app.post("/summary")
 def generate_summary(players: List[Player]):
     df = pd.DataFrame([p.dict() for p in players])
 
-    # Rename for consistency with trained model
+    # Rename to match training data column
     df = df.rename(columns={"DSA_Impact_Factor": "DSA Impact Factor"})
 
-    # Load the model
+    # Load model
     try:
         model_bundle = joblib.load("trained_model_GLOBAL.joblib")
         model = model_bundle["model"]
         features = model_bundle["features"]
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return {"error": f"Model loading failed: {e}"}
 
@@ -20,7 +51,7 @@ def generate_summary(players: List[Player]):
     for _, row in df.iterrows():
         try:
             feature_vals = pd.Series({f: row.get(f, 0.0) for f in features})
-            coefs = pd.Series(model.named_steps['elasticnetcv'].coef_, index=features)
+            coefs = pd.Series(model.named_steps["elasticnetcv"].coef_, index=features)
             contributions = feature_vals * coefs
             top_pos = contributions.sort_values(ascending=False).head(3)
             top_neg = contributions.sort_values().head(3)
@@ -28,7 +59,7 @@ def generate_summary(players: List[Player]):
             llama_prompt = f"""
 You are an NIL analyst.
 
-The player {row['Name'] if 'Name' in row else 'Unnamed Player'} has standout performance in the following metrics:
+The player {row['Name']} has standout performance in the following metrics:
 - {top_pos.index[0]}: {row[top_pos.index[0]]:.3f}
 - {top_pos.index[1]}: {row[top_pos.index[1]]:.3f}
 - {top_pos.index[2]}: {row[top_pos.index[2]]:.3f}
@@ -41,22 +72,16 @@ Their weaker metrics include:
 Write a short NIL scouting summary explaining their strengths and weaknesses in 3–4 sentences.
 """.strip()
 
-            try:
-                llama_summary = get_cached_llama_response(llama_prompt)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return {"error": f"LLM call failed: {e}"}
+            llama_summary = get_cached_llama_response(llama_prompt)
 
             summaries.append({
-                "Name": row["Name"] if "Name" in row else "Unnamed Player",
+                "Name": row["Name"],
                 "Summary": llama_summary
             })
 
         except Exception as e:
-            import traceback
-            print("ERROR during row processing:")
-            print(f"Row contents:\n{row.to_dict()}")
+            print("❌ Error processing row:")
+            print(row.to_dict())
             traceback.print_exc()
             return {"error": f"{type(e).__name__}: {str(e)}"}
 
