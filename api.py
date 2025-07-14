@@ -2,7 +2,7 @@
 def generate_summary(players: List[Player]):
     df = pd.DataFrame([p.dict() for p in players])
 
-    # 🔁 Rename for consistency with training CSV
+    # 🔁 Rename for consistency with trained model
     df = df.rename(columns={"DSA_Impact_Factor": "DSA Impact Factor"})
 
     # ✅ Load the model
@@ -11,8 +11,9 @@ def generate_summary(players: List[Player]):
         model = model_bundle["model"]
         features = model_bundle["features"]
     except Exception as e:
-        print("❌ Model loading failed:", str(e))
-        return {"error": "Model loading failed."}
+        import traceback
+        traceback.print_exc()
+        return {"error": f"Model loading failed: {e}"}
 
     summaries = []
 
@@ -27,15 +28,15 @@ def generate_summary(players: List[Player]):
             llama_prompt = f"""
 You are an NIL analyst.
 
-The player {row['Name']} has standout performance in the following metrics:
-- {top_pos.index[0]}: {row.get(top_pos.index[0]):.3f}
-- {top_pos.index[1]}: {row.get(top_pos.index[1]):.3f}
-- {top_pos.index[2]}: {row.get(top_pos.index[2]):.3f}
+The player {row.get('Name', 'Unnamed Player')} has standout performance in the following metrics:
+- {top_pos.index[0]}: {row.get(top_pos.index[0], 0.0):.3f}
+- {top_pos.index[1]}: {row.get(top_pos.index[1], 0.0):.3f}
+- {top_pos.index[2]}: {row.get(top_pos.index[2], 0.0):.3f}
 
 Their weaker metrics include:
-- {top_neg.index[0]}: {row.get(top_neg.index[0]):.3f}
-- {top_neg.index[1]}: {row.get(top_neg.index[1]):.3f}
-- {top_neg.index[2]}: {row.get(top_neg.index[2]):.3f}
+- {top_neg.index[0]}: {row.get(top_neg.index[0], 0.0):.3f}
+- {top_neg.index[1]}: {row.get(top_neg.index[1], 0.0):.3f}
+- {top_neg.index[2]}: {row.get(top_neg.index[2], 0.0):.3f}
 
 Write a short NIL scouting summary explaining their strengths and weaknesses in 3–4 sentences.
 """.strip()
@@ -43,12 +44,13 @@ Write a short NIL scouting summary explaining their strengths and weaknesses in 
             llama_summary = get_cached_llama_response(llama_prompt)
 
             summaries.append({
-                "Name": row["Name"],
+                "Name": row.get("Name", "Unnamed Player"),
                 "Summary": llama_summary
             })
 
         except Exception as e:
-            print(f"❌ Error processing row for {row['Name']}: {e}")
+            import traceback
+            traceback.print_exc()
             return {"error": f"Failed processing row: {e}"}
 
     return {"summaries": summaries}
