@@ -1,34 +1,10 @@
-import joblib
-import pandas as pd
-import numpy as np
-from typing import List
-from fastapi import FastAPI
-from pydantic import BaseModel
-import os
-
-# Optional: copy your ollama helper
-from llm_utils import get_cached_llama_response
-
-app = FastAPI()
-
-class Player(BaseModel):
-    Name: str
-    goals: float
-    assists: float
-    shotPct: float
-    groundBalls: float
-    causedTurnovers: float
-    faceoffPct: float
-    DSA_Impact_Factor: float
-
-@app.get("/")
-def root():
-    return {"message": "PLL API is running!"}
-
 @app.post("/summary")
 def generate_summary(players: List[Player]):
     df = pd.DataFrame([p.dict() for p in players])
-    
+
+    # 🔁 Rename column to match model's expected column name
+    df = df.rename(columns={"DSA_Impact_Factor": "DSA Impact Factor"})
+
     # Load your trained model
     try:
         model_bundle = joblib.load("trained_model_GLOBAL.joblib")
