@@ -5,3 +5,4 @@ pandas
 numpy
 joblib
 ollama  # optional, or openai if using GPT
+scikit-learn
