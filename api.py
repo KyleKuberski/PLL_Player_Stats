@@ -5,8 +5,6 @@ from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from llm_utils import get_cached_llama_response  # Ensure this is in your project folder
-
 app = FastAPI()
 
 # ✅ Define your request schema
@@ -66,23 +64,19 @@ def generate_summary(payload: PlayerList):
             if missing:
                 print("⚠️ Warning: Missing or NaN values for:", missing)
 
-            llama_prompt = f"""
-You are an NIL analyst.
-
-The player {row.get('Name', 'Unnamed Player')} has standout performance in the following metrics:
+            llama_summary = f"""
+This player's top contributing stats are:
 - {top_pos.index[0]}: {safe_fmt(row.get(top_pos.index[0]))}
 - {top_pos.index[1]}: {safe_fmt(row.get(top_pos.index[1]))}
 - {top_pos.index[2]}: {safe_fmt(row.get(top_pos.index[2]))}
 
-Their weaker metrics include:
+Areas with the lowest contribution were:
 - {top_neg.index[0]}: {safe_fmt(row.get(top_neg.index[0]))}
 - {top_neg.index[1]}: {safe_fmt(row.get(top_neg.index[1]))}
 - {top_neg.index[2]}: {safe_fmt(row.get(top_neg.index[2]))}
 
-Write a short NIL scouting summary explaining their strengths and weaknesses in 3–4 sentences.
+These patterns are based on overall impact from the model. High contribution features may align with increased NIL value potential.
 """.strip()
-
-            llama_summary = get_cached_llama_response(llama_prompt)
 
             summaries.append({
                 "Name": row.get("Name", "Unnamed Player"),
