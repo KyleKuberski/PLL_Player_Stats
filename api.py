@@ -26,6 +26,10 @@ class Player(BaseModel):
     shortHandedGoals: float
     DSA_Impact_Factor: float
 
+# ✅ Wrapper for payload
+class PlayerList(BaseModel):
+    players: List[Player]
+
 @app.get("/")
 def root():
     return {"message": "PLL API is running!"}
@@ -34,8 +38,9 @@ def safe_fmt(val):
     return f"{val:.3f}" if isinstance(val, (int, float)) else "N/A"
 
 @app.post("/summary")
-def generate_summary(players: List[Player]):
+def generate_summary(payload: PlayerList):
     try:
+        players = payload.players
         print("✅ Received request with players:")
         print(players)
 
@@ -61,9 +66,6 @@ def generate_summary(players: List[Player]):
                 contributions = feature_vals * coefs
                 top_pos = contributions.sort_values(ascending=False).head(3)
                 top_neg = contributions.sort_values().head(3)
-
-                def safe_fmt(val):
-                    return f"{val:.3f}" if isinstance(val, (float, int)) else "N/A"
 
                 llama_prompt = f"""
 You are an NIL analyst.
@@ -99,4 +101,3 @@ Write a short NIL scouting summary explaining their strengths and weaknesses in 
     except Exception as e:
         traceback.print_exc()
         return {"error": f"Unhandled error: {type(e).__name__}: {str(e)}"}
-
